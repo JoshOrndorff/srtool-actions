@@ -52,6 +52,16 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # We pull first as it potentially generated lots of logs. Doing it here first, we can group thos logs
+    # and keep the logs of other steps cleaner.
+    - id: pulling_srtool
+      name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
+      shell: bash
+      run: |
+        echo ::group::pulling the srtool docker image
+        docker pull ${{ inputs.image }}:${{ inputs.tag }}
+        echo ::endgroup
+
     - id: version
       shell: bash
       env:
@@ -69,6 +79,7 @@ runs:
       env:
         WORKDIR: ${{ inputs.workdir || github.workspace }}
       run: |
+        echo ::group::srtool info
         cd ${{ inputs.workdir }}
         echo "::debug::info"
         echo "::debug::info::git" `ls -ald ${{ inputs.workdir }}/.git`
@@ -76,6 +87,7 @@ runs:
         CMD="docker run -i --rm -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/info -cM"
         JSON=`$CMD`
         echo "::set-output name=info::$JSON"
+        echo ::endgroup
 
     # - id: checks
     #   name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
@@ -92,7 +104,7 @@ runs:
       name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
       shell: bash
       env:
-        RUNTIME_DIR: ${${{ inputs.runtime_dir}}:-runtime/${{ inputs.chain }}}
+        RUNTIME_DIR: ${INPUTS_RUNTIME_DIR:-runtime/$INPUTS_CHAIN}
       run: |
         cd ${{ inputs.workdir }}
         echo "::debug::build::workdir" ${{ inputs.workdir }}
