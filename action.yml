@@ -114,12 +114,10 @@ runs:
       run: |
         echo ::group::Srtool version
         echo ::debug::version workdir: ${{ env.WORKDIR }}
-        # using working-directory would be nicer but act seems to be full of bugs...
-        # cd ${{ env.WORKDIR }}
-        echo "::debug::version"
+        echo ::debug::version
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
         JSON=`$CMD`
-        echo "::set-output name=version::$JSON"
+        echo ::set-output name=version::$JSON
         echo ::endgroup
 
     - id: info
@@ -127,24 +125,13 @@ runs:
       run: |
         echo ::group::srtool info
         cd ${{ env.WORKDIR }}
-        echo "::debug::info"
-        echo "::debug::info::git" `ls -ald ${{ env.WORKDIR }}/.git`
-        echo "::debug::info::cargo" `ls -al ${{ env.WORKDIR }}/Cargo.toml`
+        echo ::debug::info
+        echo ::debug::info::git" `ls -ald ${{ env.WORKDIR }}/.git`
+        echo ::debug::info::cargo" `ls -al ${{ env.WORKDIR }}/Cargo.toml`
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
         JSON=`$CMD`
-        echo "::set-output name=info::$JSON"
+        echo ::set-output name=info::$JSON
         echo ::endgroup
-
-    # - id: checks
-    #   name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
-    #   shell: bash
-    #   run: |
-    #     echo "::debug::checks"
-    #     cd ${{ env.WORKDIR }}
-    #     echo "::debug::checks::pwd" `pwd`
-    #     echo "::debug::checks::workdir" ${{ env.WORKDIR }}
-    #     # ls -al
-    #     docker run -i --rm -v ${{ env.WORKDIR }}:/build busybox ls /build/Cargo.toml
 
     - id: build
       name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
@@ -152,15 +139,15 @@ runs:
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
         cd ${{ env.WORKDIR }}
-        echo "::debug::build::workdir" ${{ env.WORKDIR }}
-        echo "::debug::build::chain" ${{ inputs.chain }}
-        echo "::debug::build::runtime_dir" ${{ env.RUNTIME_DIR }}
+        echo ::debug::build::workdir" ${{ env.WORKDIR }}
+        echo ::debug::build::chain" ${{ inputs.chain }}
+        echo ::debug::build::runtime_dir" ${{ env.RUNTIME_DIR }}
 
         CMD="docker run -i --rm -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=${{ env.RUNTIME_DIR }} -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/build --app --json -cM"
         echo "::debug::build::docker_run" $CMD
 
         # here we keep streaming the progress and fetch the last line for the json result
-        stdbuf -oL "$CMD" | {
+        stdbuf -oL $CMD | {
           while IFS= read -r line
           do
             echo "::debug::srtool $line"
