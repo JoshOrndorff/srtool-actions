@@ -134,7 +134,7 @@ runs:
       shell: bash
       run: |
         echo ::group::Srtool version
-        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
+        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} version -cM"
         JSON=`$CMD`
         echo $JSON | jq
         echo ::set-output name=version::$JSON
@@ -144,7 +144,7 @@ runs:
       shell: bash
       run: |
         echo ::group::srtool info
-        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
+        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} info -cM"
         JSON=`$CMD`
         echo $JSON | jq
         echo ::set-output name=info::$JSON
@@ -155,7 +155,7 @@ runs:
       shell: bash
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
-        CMD="docker run -i --rm -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=${{ env.RUNTIME_DIR }} -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/build --app --json -cM"
+        CMD="docker run -i --rm -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=${{ env.RUNTIME_DIR }} -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} build --app --json -cM"
         echo ::debug::build::docker_run $CMD
 
         # here we keep streaming the progress and fetch the last line for the json result
