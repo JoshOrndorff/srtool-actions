@@ -5,7 +5,10 @@ default:
   @just --list --unsorted
 
 test file="dev":
-    act -W tests/{{file}}.yml
+    act -b --insecure-secrets --env-file .env -W tests/{{file}}.yml
 
 graph file="dev":
     act -W tests/{{file}}.yml -g
+
+clean:
+  rm -rf polkadot workflow _actions

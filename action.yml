@@ -14,7 +14,7 @@ inputs:
     description: "You can use an alternate image, use with caution!"
     required: true
     default: "chevdor/srtool"
-  path:
+  workdir:
     description: "Path of the project, this is where your main Cargo.toml is located"
     required: true
     default: "${{ github.workspace }}"
@@ -55,42 +55,55 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - id: debug
-      shell: bash
-      run: |
-        echo ENV: $GITHUB_WORKSPACE
-        echo Running from: ${{ github.workspace }}
-        echo - image: ${{ inputs.image }}:${{ inputs.tag }}
-        echo - package: ${{ inputs.package }}
-
     - id: version
       shell: bash
       run: |
-        echo Srtool version:
-        CMD="docker run -i -v ${{ github.workspace }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
+        # using working-directory would be nicer but act seems to be full of bugs...
+        cd ${{ inputs.workdir }} 
+        echo "::debug::version"
+        CMD="docker run -i --rm -v $PWD:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
         JSON=`$CMD`
         echo "::set-output name=version::$JSON"
 
     - id: info
       shell: bash
       run: |
-        echo Srtool infos:
-        CMD="docker run -i -v ${{ github.workspace }}:/build ${{ inputs.image }}:${{ inputs.tag }} info -cM"
+        cd ${{ inputs.workdir }} 
+        echo "::debug::info"
+        echo "::debug::info::git" `ls -ald ${{ inputs.workdir }}/.git`
+        echo "::debug::info::cargo" `ls -al ${{ inputs.workdir }}/Cargo.toml`
+        CMD="docker run -i --rm -v ${{ inputs.workdir }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/info -cM"
         JSON=`$CMD`
         echo "::set-output name=info::$JSON"
+
+    # - id: checks
+    #   name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
+    #   shell: bash
+    #   run: |
+    #     echo "::debug::checks"
+    #     cd ${{ inputs.workdir }}
+    #     echo "::debug::checks::pwd" `pwd`
+    #     echo "::debug::checks::workdir" ${{ inputs.workdir }}
+    #     # ls -al
+    #     docker run -i --rm -v ${{ inputs.workdir }}:/build busybox ls /build/Cargo.toml
 
     - id: build
       name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
       shell: bash
+      env:
+        RUNTIME_DIR: runtime/${{ inputs.chain }}
       run: |
-        echo Starting build...
-        # CMD="docker run -i -v ${{ github.workspace }}:/build ${{ inputs.image }}:${{ inputs.tag }} build --app --json -cM"
-        CMD="docker run -i busybox echo -e I am some output\nAnd some more\n{ \"a\": 42, \"prop\": \"0x12345\" }"
+        cd ${{ inputs.workdir }}
+        echo "::debug::build::workdir" ${{ inputs.workdir }}
+        echo "::debug::build::chain" ${{ inputs.chain }}
+        echo "::debug::build::runtime_dir" $RUNTIME_DIR
+
+        CMD="docker run -i --rm -e PACKAGE=${{ inputs.package }} -e RUNTIME_DIR=$RUNTIME_DIR -v ${{ inputs.workdir }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/build --app --json -cM"
         # here we keep streaming the progress and fetch the last line for the json result
         stdbuf -oL $CMD | {
           while IFS= read -r line
           do
-            echo "> $line"
+            echo "::debug::srtool $line"
             JSON="$line"
           done
           echo "::set-output name=json::$JSON"

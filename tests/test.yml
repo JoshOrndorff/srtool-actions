@@ -15,19 +15,23 @@ jobs:
       matrix:
         chain: ["westend"]
     steps:
-      - name: Check tokens
-        env:
-          TEST_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TEST_PUBLIC_CLONE_PAT: ${{ secrets.PUBLIC_CLONE_PAT }}
-        run: |
-          echo ${#TEST_GITHUB_TOKEN}
-          echo ${#TEST_PUBLIC_CLONE_PAT}
+      # - name: Check tokens
+      #   env:
+      #     TEST_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     TEST_GITHUB_TOKEN2: ${{ github.token }}
+      #     TEST_PUBLIC_CLONE_PAT: ${{ secrets.PUBLIC_CLONE_PAT }}
+      #   run: |
+      #     echo ${#TEST_GITHUB_TOKEN}
+      #     echo ${#TEST_GITHUB_TOKEN2}
+      #     echo ${#TEST_PUBLIC_CLONE_PAT}
+      #     echo $SECRETS_GITHUB_TOKEN
+
       - name: Fetch Polkadot
         uses: actions/checkout@v2
         with:
           repository: paritytech/polkadot
-          path: 'polkadot'
-          token: ${{ secrets.PUBLIC_CLONE_PAT || secrets.GITHUB_TOKEN }}
+          path: "polkadot"
+          token: ${{ env.PAT }}
 
       - name: Srtool build
         id: srtool_build
@@ -38,8 +42,9 @@ jobs:
           chain: ${{ matrix.chain }}
           package: "runtime-${{ matrix.chain }}"
           image: chevdor/srtool
-          tag: "nightly-2021-02-25-dev"
-          path: 'polakdot'  # should be the same than the one above
+          # tag: "nightly-2021-02-25-dev"
+          tag: "nightly-2021-03-15"
+          workdir: "${{ github.workspace }}/polkadot" # should be the same than the one above
       - name: Summary
         run: |
           echo Summary:
