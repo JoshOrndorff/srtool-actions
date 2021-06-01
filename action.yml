@@ -69,7 +69,7 @@ runs:
 
       run: |
         echo ::group::Environment setup and checks
-        echo ::info::env SRTOOL_LATEST: $SRTOOL_LATEST
+        echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
         echo ::info::env image: $SRTOOL_IMAGE
         echo ::info::env chain: ${{ inputs.chain }}
         echo ::info::env package: $PACKAGE
