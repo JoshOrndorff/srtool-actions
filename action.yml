@@ -6,26 +6,26 @@ branding:
   color: "blue"
 
 inputs:
-  tag:
-    description: "Tag of the srtool image to use"
-    default: "nightly-2021-03-15"
-    required: true
-  image:
-    description: "You can use an alternate image, use with caution!"
-    required: true
-    default: "chevdor/srtool"
-  workdir:
-    description: "Path of the project, this is where your main Cargo.toml is located"
-    required: true
   chain:
     description: "Name of the chain, ie. polkadot"
     required: true
   package:
-    description: "Runtime package to build, ie. polkadot-runtime"
+    description: "Runtime package to build, ie. polkadot-runtime. If not provided, it will be set to <chain>-runtime"
+    required: false
+
+  image:
+    description: "You can use an alternate image, use with caution!"
+    required: true
+    default: "chevdor/srtool"
+  tag:
+    description: "Tag of the srtool image to use. Omit to use the latest (recommended)"
+    required: false
+  workdir:
+    description: "Path of the project, this is where your main Cargo.toml is located. This is relative to $GITHUB_WORKSPACE."
     required: true
   runtime_dir:
-    description: "Location of the runtime in your repo"
-    required: true
+    description: "Location of the runtime in your repo. The default is 'runtime/<chain_name>'"
+    required: false
 outputs:
   # runtime:
   #   description: "The generated Runtime"
@@ -52,45 +52,69 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - id: check_latest_srtool
+      name: Check the version of the latest srtool
+      shell: bash
+      run: |
+        SRTOOL_LATEST=`https://gitlab.com/chevdor/srtool/-/raw/master/RUSTC_VERSION`
+
+    - id: env_setup
+      name: Checking/Setting Env
+      shell: bash
+      env:
+        WORKDIR: ${{ inputs.workdir || github.workspace }}
+        RUNTIME_DIR: ${INPUTS_RUNTIME_DIR:-runtime/$INPUTS_CHAIN}
+        SRTOOL_TAG: ${ ${{ inputs.tag }}:-$SRTOOL_LATEST }
+        SRTOOL_IMAGE: ${{ inputs.image }}:$SRTOOL_TAG
+        PACKAGE: ${${{ inputs.package }}:-${{ inputs.chain }}-runtime }
+
+      run: |
+        echo ::group::Environment setup and checks
+        echo ::debug::env image: $SRTOOL_IMAGE
+        echo ::debug::env chain: ${{ inputs.chain }}
+        echo ::debug::env package: $PACKAGE
+        echo ::debug::env workdir: $WORKDIR
+        echo ::debug::env runtime_dir: $RUNTIME_DIR
+        echo ::endgroup
+
     # We pull first as it potentially generated lots of logs. Doing it here first, we can group thos logs
     # and keep the logs of other steps cleaner.
     - id: pulling_srtool
-      name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
+      name: Build $PACKAGE using $SRTOOL_IMAGE
       shell: bash
       run: |
-        echo ::group::pulling the srtool docker image
-        docker pull ${{ inputs.image }}:${{ inputs.tag }}
+        echo ::group::Pulling the srtool docker image: $SRTOOL_IMAGE
+        docker pull $SRTOOL_IMAGE
         echo ::endgroup
 
     - id: version
       shell: bash
-      env:
-        WORKDIR: ${{ inputs.workdir || github.workspace }}
       run: |
+        echo ::group::Srtool version
+        echo ::debug::version workdir: $WORKDIR
         # using working-directory would be nicer but act seems to be full of bugs...
         # cd ${{ inputs.workdir }}
         echo "::debug::version"
-        CMD="docker run -i --rm -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
+        CMD="docker run -i --rm -v $WORKDIR:/build $SRTOOL_IMAGE /srtool/version -cM"
         JSON=`$CMD`
         echo "::set-output name=version::$JSON"
+        echo ::endgroup
 
     - id: info
       shell: bash
-      env:
-        WORKDIR: ${{ inputs.workdir || github.workspace }}
       run: |
         echo ::group::srtool info
         cd ${{ inputs.workdir }}
         echo "::debug::info"
         echo "::debug::info::git" `ls -ald ${{ inputs.workdir }}/.git`
         echo "::debug::info::cargo" `ls -al ${{ inputs.workdir }}/Cargo.toml`
-        CMD="docker run -i --rm -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/info -cM"
+        CMD="docker run -i --rm -v $WORKDIR:/build $SRTOOL_IMAGE /srtool/info -cM"
         JSON=`$CMD`
         echo "::set-output name=info::$JSON"
         echo ::endgroup
 
     # - id: checks
-    #   name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
+    #   name: Build ${{ inputs.package }} using $SRTOOL_IMAGE
     #   shell: bash
     #   run: |
     #     echo "::debug::checks"
@@ -101,11 +125,10 @@ runs:
     #     docker run -i --rm -v $WORKDIR:/build busybox ls /build/Cargo.toml
 
     - id: build
-      name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
+      name: Build ${{ inputs.package }} using $SRTOOL_IMAGE
       shell: bash
-      env:
-        RUNTIME_DIR: ${INPUTS_RUNTIME_DIR:-runtime/$INPUTS_CHAIN}
       run: |
+        echo ::group::Srtool build of chain ${{ inputs.chain }}
         cd ${{ inputs.workdir }}
         echo "::debug::build::workdir" ${{ inputs.workdir }}
         echo "::debug::build::chain" ${{ inputs.chain }}
