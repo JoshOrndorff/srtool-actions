@@ -56,7 +56,7 @@ runs:
       name: Check the version of the latest srtool
       shell: bash
       run: |
-        SRTOOL_LATEST=`https://gitlab.com/chevdor/srtool/-/raw/master/RUSTC_VERSION`
+        SRTOOL_LATEST=`curl -s https://gitlab.com/chevdor/srtool/-/raw/master/RUSTC_VERSION`
 
     - id: env_setup
       name: Checking/Setting Env
