@@ -58,45 +58,45 @@ runs:
       run: |
         LATEST=`curl -s https://gitlab.com/chevdor/srtool/-/raw/master/RUSTC_VERSION`
         echo "SRTOOL_LATEST=$LATEST" >> $GITHUB_ENV
+
     - id: env_setup
       name: Checking/Setting Env
       shell: bash
-      env:
-        WORKDIR: ${{ inputs.workdir || github.workspace }}
-        RUNTIME_DIR: ${INPUTS_RUNTIME_DIR:-runtime/$INPUTS_CHAIN}
-        SRTOOL_TAG: ${{ inputs.tag || env.SRTOOL_LATEST }}
-        SRTOOL_IMAGE: ${{ inputs.image }}:${{ env.SRTOOL_TAG }}
-        PACKAGE: ${${{ inputs.package }}:-${{ inputs.chain }}-runtime }
-
       run: |
+        echo "SRTOOL_TAG=${{ inputs.tag || env.SRTOOL_LATEST }}" >> $GITHUB_ENV
+        echo "SRTOOL_IMAGE=${{ inputs.image }}:${{ env.SRTOOL_TAG }}" >> $GITHUB_ENV
+        echo "WORKDIR=${{ inputs.workdir || github.workspace }}" >> $GITHUB_ENV
+        echo "RUNTIME_DIR=${{ inputs.runtime_dir || 'runtime/' + inputs.chain }}" >> $GITHUB_ENV
+        echo "PACKAGE=${{ inputs.package || inputs.chain + '-runtime' }}" >> $GITHUB_ENV
+
         echo ::group::Environment setup and checks
-        echo "::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}"
-        echo ::info::env image: $SRTOOL_IMAGE
+        echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
+        echo ::info::env image: ${{ env.SRTOOL_IMAGE }}
         echo ::info::env chain: ${{ inputs.chain }}
-        echo ::info::env package: $PACKAGE
-        echo ::info::env workdir: $WORKDIR
-        echo ::info::env runtime_dir: $RUNTIME_DIR
+        echo ::info::env package: ${{ env.PACKAGE }}
+        echo ::info::env workdir: ${{ env.WORKDIR }}
+        echo ::info::env runtime_dir: ${{ env.RUNTIME_DIR }}
         echo ::endgroup
 
     # We pull first as it potentially generated lots of logs. Doing it here first, we can group thos logs
     # and keep the logs of other steps cleaner.
     - id: pulling_srtool
-      name: Build $PACKAGE using $SRTOOL_IMAGE
+      name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
       shell: bash
       run: |
-        echo ::group::Pulling the srtool docker image: $SRTOOL_IMAGE
-        docker pull $SRTOOL_IMAGE
+        echo ::group::Pulling the srtool docker image: ${{ env.SRTOOL_IMAGE }}
+        docker pull ${{ env.SRTOOL_IMAGE }}
         echo ::endgroup
 
     - id: version
       shell: bash
       run: |
         echo ::group::Srtool version
-        echo ::debug::version workdir: $WORKDIR
+        echo ::debug::version workdir: ${{ env.WORKDIR }}
         # using working-directory would be nicer but act seems to be full of bugs...
         # cd ${{ inputs.workdir }}
         echo "::debug::version"
-        CMD="docker run -i --rm -v $WORKDIR:/build $SRTOOL_IMAGE /srtool/version -cM"
+        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
         JSON=`$CMD`
         echo "::set-output name=version::$JSON"
         echo ::endgroup
@@ -109,13 +109,13 @@ runs:
         echo "::debug::info"
         echo "::debug::info::git" `ls -ald ${{ inputs.workdir }}/.git`
         echo "::debug::info::cargo" `ls -al ${{ inputs.workdir }}/Cargo.toml`
-        CMD="docker run -i --rm -v $WORKDIR:/build $SRTOOL_IMAGE /srtool/info -cM"
+        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
         JSON=`$CMD`
         echo "::set-output name=info::$JSON"
         echo ::endgroup
 
     # - id: checks
-    #   name: Build ${{ inputs.package }} using $SRTOOL_IMAGE
+    #   name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
     #   shell: bash
     #   run: |
     #     echo "::debug::checks"
@@ -123,10 +123,10 @@ runs:
     #     echo "::debug::checks::pwd" `pwd`
     #     echo "::debug::checks::workdir" ${{ inputs.workdir }}
     #     # ls -al
-    #     docker run -i --rm -v $WORKDIR:/build busybox ls /build/Cargo.toml
+    #     docker run -i --rm -v ${{ env.WORKDIR }}:/build busybox ls /build/Cargo.toml
 
     - id: build
-      name: Build ${{ inputs.package }} using $SRTOOL_IMAGE
+      name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
       shell: bash
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
@@ -135,7 +135,7 @@ runs:
         echo "::debug::build::chain" ${{ inputs.chain }}
         echo "::debug::build::runtime_dir" $RUNTIME_DIR
 
-        CMD="docker run -i --rm -e PACKAGE=${{ inputs.package }} -e RUNTIME_DIR=$RUNTIME_DIR -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/build --app --json -cM"
+        CMD="docker run -i --rm -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=$RUNTIME_DIR -v ${{ env.WORKDIR }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/build --app --json -cM"
         # here we keep streaming the progress and fetch the last line for the json result
         stdbuf -oL $CMD | {
           while IFS= read -r line
