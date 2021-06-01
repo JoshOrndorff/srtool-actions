@@ -57,20 +57,20 @@ runs:
       shell: bash
       run: |
         LATEST=`curl -s https://gitlab.com/chevdor/srtool/-/raw/master/RUSTC_VERSION`
-        echo "{SRTOOL_LATEST}={$LATEST}" >> $GITHUB_ENV
+        echo "SRTOOL_LATEST=$LATEST" >> $GITHUB_ENV
     - id: env_setup
       name: Checking/Setting Env
       shell: bash
       env:
         WORKDIR: ${{ inputs.workdir || github.workspace }}
         RUNTIME_DIR: ${INPUTS_RUNTIME_DIR:-runtime/$INPUTS_CHAIN}
-        SRTOOL_TAG: ${ ${{ inputs.tag }}:-${{ env.SRTOOL_LATEST }} }
+        SRTOOL_TAG: ${{ inputs.tag || env.SRTOOL_LATEST }}
         SRTOOL_IMAGE: ${{ inputs.image }}:${{ env.SRTOOL_TAG }}
         PACKAGE: ${${{ inputs.package }}:-${{ inputs.chain }}-runtime }
 
       run: |
         echo ::group::Environment setup and checks
-        echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
+        echo "::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}"
         echo ::info::env image: $SRTOOL_IMAGE
         echo ::info::env chain: ${{ inputs.chain }}
         echo ::info::env package: $PACKAGE
