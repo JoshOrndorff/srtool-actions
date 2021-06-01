@@ -156,7 +156,7 @@ runs:
         stdbuf -oL $CMD | {
           while IFS= read -r line
           do
-            echo ▷ $line
+            echo ║ $line
             JSON="$line"
           done
           echo ::set-output name=json::$JSON
