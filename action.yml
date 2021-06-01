@@ -56,9 +56,9 @@ runs:
       shell: bash
       run: |
         # using working-directory would be nicer but act seems to be full of bugs...
-        cd ${{ inputs.workdir }} 
+        # cd ${{ inputs.workdir }} 
         echo "::debug::version"
-        CMD="docker run -i --rm -v $PWD:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
+        CMD="docker run -i --rm -v ${{ inputs.workdir }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
         JSON=`$CMD`
         echo "::set-output name=version::$JSON"
 
