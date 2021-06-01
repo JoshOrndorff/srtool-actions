@@ -40,8 +40,8 @@ jobs:
           # For now we HAVE to pass all to test due to
           # a bug in `act`: https://github.com/nektos/act/issues/655
           chain: ${{ matrix.chain }}
-          package: "runtime-${{ matrix.chain }}"
-          image: chevdor/srtool
+          # package: "runtime-${{ matrix.chain }}"
+          # image: chevdor/srtool
           # tag: "nightly-2021-02-25-dev"
           tag: "nightly-2021-03-15"
           workdir: "${{ github.workspace }}/polkadot" # should be the same than the one above

@@ -74,7 +74,7 @@ runs:
         echo "RUNTIME_DIR=$RUNTIME_DIR" >> $GITHUB_ENV
 
         PACKAGE=${{ inputs.package }}
-        PACKAGE=${PACKAGE:-${{ inputs.chain }} '-runtime' }
+        PACKAGE=${PACKAGE:-${{ inputs.chain }}'-runtime' }
         echo "PACKAGE=$PACKAGE" >> $GITHUB_ENV
 
         echo ::endgroup
@@ -108,7 +108,7 @@ runs:
         echo ::group::Srtool version
         echo ::debug::version workdir: ${{ env.WORKDIR }}
         # using working-directory would be nicer but act seems to be full of bugs...
-        # cd ${{ inputs.workdir }}
+        # cd ${{ env.WORKDIR }}
         echo "::debug::version"
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
         JSON=`$CMD`
@@ -119,10 +119,10 @@ runs:
       shell: bash
       run: |
         echo ::group::srtool info
-        cd ${{ inputs.workdir }}
+        cd ${{ env.WORKDIR }}
         echo "::debug::info"
-        echo "::debug::info::git" `ls -ald ${{ inputs.workdir }}/.git`
-        echo "::debug::info::cargo" `ls -al ${{ inputs.workdir }}/Cargo.toml`
+        echo "::debug::info::git" `ls -ald ${{ env.WORKDIR }}/.git`
+        echo "::debug::info::cargo" `ls -al ${{ env.WORKDIR }}/Cargo.toml`
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
         JSON=`$CMD`
         echo "::set-output name=info::$JSON"
@@ -133,9 +133,9 @@ runs:
     #   shell: bash
     #   run: |
     #     echo "::debug::checks"
-    #     cd ${{ inputs.workdir }}
+    #     cd ${{ env.WORKDIR }}
     #     echo "::debug::checks::pwd" `pwd`
-    #     echo "::debug::checks::workdir" ${{ inputs.workdir }}
+    #     echo "::debug::checks::workdir" ${{ env.WORKDIR }}
     #     # ls -al
     #     docker run -i --rm -v ${{ env.WORKDIR }}:/build busybox ls /build/Cargo.toml
 
@@ -144,8 +144,8 @@ runs:
       shell: bash
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
-        cd ${{ inputs.workdir }}
-        echo "::debug::build::workdir" ${{ inputs.workdir }}
+        cd ${{ env.WORKDIR }}
+        echo "::debug::build::workdir" ${{ env.WORKDIR }}
         echo "::debug::build::chain" ${{ inputs.chain }}
         echo "::debug::build::runtime_dir" $RUNTIME_DIR
 
