@@ -111,12 +111,14 @@ runs:
       run: |
         echo ::group::Environment check
 
-        echo - SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
-        echo - image: ${{ env.SRTOOL_IMAGE }}
-        echo - chain: ${{ inputs.chain }}
-        echo - package: ${{ env.PACKAGE }}
-        echo - workdir: ${{ env.WORKDIR }}
-        echo - runtime_dir: ${{ env.RUNTIME_DIR }}
+        echo ℹ️ SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
+        echo ℹ️ image: ${{ env.SRTOOL_IMAGE }}
+        echo ℹ️ chain: ${{ inputs.chain }}
+        echo ℹ️ package: ${{ env.PACKAGE }}
+        echo ℹ️ workdir: ${{ env.WORKDIR }}
+        echo ℹ️ runtime_dir: ${{ env.RUNTIME_DIR }}
+        echo ℹ️ .git folder: `ls -ald ${{ env.WORKDIR }}/.git`
+        echo ℹ️ Cargo.toml: `ls -al ${{ env.WORKDIR }}/Cargo.toml`
 
         echo ::endgroup
 
@@ -125,40 +127,27 @@ runs:
       shell: bash
       run: |
         echo ::group::Pulling the srtool docker image: ${{ env.SRTOOL_IMAGE }}
-
         docker pull ${{ env.SRTOOL_IMAGE }}
-
         echo ::endgroup
 
     - id: version
       shell: bash
       run: |
         echo ::group::Srtool version
-
-        echo ::debug::version workdir: ${{ env.WORKDIR }}
-        echo ::debug::version
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
         JSON=`$CMD`
         echo $JSON | jq
         echo ::set-output name=version::$JSON
-
         echo ::endgroup
 
     - id: info
       shell: bash
       run: |
         echo ::group::srtool info
-
-        cd ${{ env.WORKDIR }}
-        echo ::debug::info
-        echo ::debug::info::git `ls -ald ${{ env.WORKDIR }}/.git`
-        echo ::debug::info::cargo `ls -al ${{ env.WORKDIR }}/Cargo.toml`
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
         JSON=`$CMD`
         echo $JSON | jq
-
         echo ::set-output name=info::$JSON
-
         echo ::endgroup
 
     - id: build
@@ -166,12 +155,6 @@ runs:
       shell: bash
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
-
-        cd ${{ env.WORKDIR }}
-        echo ::debug::build::workdir ${{ env.WORKDIR }}
-        echo ::debug::build::chain ${{ inputs.chain }}
-        echo ::debug::build::runtime_dir ${{ env.RUNTIME_DIR }}
-
         CMD="docker run -i --rm -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=${{ env.RUNTIME_DIR }} -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/build --app --json -cM"
         echo ::debug::build::docker_run $CMD
 
