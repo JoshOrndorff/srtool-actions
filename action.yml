@@ -68,7 +68,8 @@ runs:
         echo "WORKDIR=${{ inputs.workdir || github.workspace }}" >> $GITHUB_ENV
         RUNTIME_DIR=${${{ inputs.runtime_dir}}:-'runtime/'${{ inputs.chain}}}
         echo "RUNTIME_DIR=$RUNTIME_DIR" >> $GITHUB_ENV
-        echo "PACKAGE=${{ inputs.package || inputs.chain + '-runtime' }}" >> $GITHUB_ENV
+        PACKAGE=${${{ inputs.package }}:-${{ inputs.chain }} '-runtime' }
+        echo "PACKAGE=$PACKAGE" >> $GITHUB_ENV
 
         echo ::group::Environment setup and checks
         echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
