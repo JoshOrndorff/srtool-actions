@@ -71,12 +71,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - id: instal_utils
-      name: Install setup
-      shell: bash
-      run: |
-        sudo apt install -y coreutils tree jq
-
     - id: check_latest_srtool
       name: Check the version of the latest srtool
       shell: bash
