@@ -60,18 +60,30 @@ runs:
         echo "SRTOOL_LATEST=$LATEST" >> $GITHUB_ENV
 
     - id: env_setup
-      name: Checking/Setting Env
+      name: Setting Env
       shell: bash
       run: |
-        echo "SRTOOL_TAG=${{ inputs.tag || env.SRTOOL_LATEST }}" >> $GITHUB_ENV
-        echo "SRTOOL_IMAGE=${{ inputs.image }}:${{ env.SRTOOL_TAG }}" >> $GITHUB_ENV
+        echo ::group::Environment setup
+        SRTOOL_TAG=${{ inputs.tag || env.SRTOOL_LATEST }}
+        echo "SRTOOL_TAG=$SRTOOL_TAG" >> $GITHUB_ENV
+        echo "SRTOOL_IMAGE=${{ inputs.image }}:$SRTOOL_TAG" >> $GITHUB_ENV
         echo "WORKDIR=${{ inputs.workdir || github.workspace }}" >> $GITHUB_ENV
-        RUNTIME_DIR=${${{ inputs.runtime_dir}}:-'runtime/'${{ inputs.chain}}}
+
+        RUNTIME_DIR=${{ inputs.runtime_dir}}
+        RUNTIME_DIR=${RUNTIME_DIR:-'runtime/'${{ inputs.chain}}}
         echo "RUNTIME_DIR=$RUNTIME_DIR" >> $GITHUB_ENV
-        PACKAGE=${${{ inputs.package }}:-${{ inputs.chain }} '-runtime' }
+
+        PACKAGE=${{ inputs.package }}
+        PACKAGE=${PACKAGE:-${{ inputs.chain }} '-runtime' }
         echo "PACKAGE=$PACKAGE" >> $GITHUB_ENV
 
-        echo ::group::Environment setup and checks
+        echo ::endgroup
+
+    - id: env_check
+      name: Checking Env
+      shell: bash
+      run: |
+        echo ::group::Environment check
         echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
         echo ::info::env image: ${{ env.SRTOOL_IMAGE }}
         echo ::info::env chain: ${{ inputs.chain }}
