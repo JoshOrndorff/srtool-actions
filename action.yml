@@ -23,7 +23,7 @@ inputs:
   package:
     description: "Runtime package to build, ie. polkadot-runtime"
     required: true
-  build_dir:
+  runtime_dir:
     description: "Location of the runtime in your repo"
     required: true
 outputs:
@@ -54,22 +54,26 @@ runs:
   steps:
     - id: version
       shell: bash
+      env:
+        WORKDIR: ${{ inputs.workdir || github.workspace }}
       run: |
         # using working-directory would be nicer but act seems to be full of bugs...
-        # cd ${{ inputs.workdir }} 
+        # cd ${{ inputs.workdir }}
         echo "::debug::version"
-        CMD="docker run -i --rm -v ${{ inputs.workdir }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
+        CMD="docker run -i --rm -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/version -cM"
         JSON=`$CMD`
         echo "::set-output name=version::$JSON"
 
     - id: info
       shell: bash
+      env:
+        WORKDIR: ${{ inputs.workdir || github.workspace }}
       run: |
-        cd ${{ inputs.workdir }} 
+        cd ${{ inputs.workdir }}
         echo "::debug::info"
         echo "::debug::info::git" `ls -ald ${{ inputs.workdir }}/.git`
         echo "::debug::info::cargo" `ls -al ${{ inputs.workdir }}/Cargo.toml`
-        CMD="docker run -i --rm -v ${{ inputs.workdir }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/info -cM"
+        CMD="docker run -i --rm -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/info -cM"
         JSON=`$CMD`
         echo "::set-output name=info::$JSON"
 
@@ -82,20 +86,20 @@ runs:
     #     echo "::debug::checks::pwd" `pwd`
     #     echo "::debug::checks::workdir" ${{ inputs.workdir }}
     #     # ls -al
-    #     docker run -i --rm -v ${{ inputs.workdir }}:/build busybox ls /build/Cargo.toml
+    #     docker run -i --rm -v $WORKDIR:/build busybox ls /build/Cargo.toml
 
     - id: build
       name: Build ${{ inputs.package }} using ${{ inputs.image }}:${{ inputs.tag }}
       shell: bash
       env:
-        RUNTIME_DIR: runtime/${{ inputs.chain }}
+        RUNTIME_DIR: ${${{ inputs.runtime_dir}}:-runtime/${{ inputs.chain }}}
       run: |
         cd ${{ inputs.workdir }}
         echo "::debug::build::workdir" ${{ inputs.workdir }}
         echo "::debug::build::chain" ${{ inputs.chain }}
         echo "::debug::build::runtime_dir" $RUNTIME_DIR
 
-        CMD="docker run -i --rm -e PACKAGE=${{ inputs.package }} -e RUNTIME_DIR=$RUNTIME_DIR -v ${{ inputs.workdir }}:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/build --app --json -cM"
+        CMD="docker run -i --rm -e PACKAGE=${{ inputs.package }} -e RUNTIME_DIR=$RUNTIME_DIR -v $WORKDIR:/build ${{ inputs.image }}:${{ inputs.tag }} /srtool/build --app --json -cM"
         # here we keep streaming the progress and fetch the last line for the json result
         stdbuf -oL $CMD | {
           while IFS= read -r line
