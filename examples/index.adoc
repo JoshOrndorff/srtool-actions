@@ -8,12 +8,17 @@ IMPORTANT: Make sure you store the yml files shown below in your repository unde
 include::01_basic.yml[]
 ----
 
+== Report
+----
+include::02_report.yml[]
+----
+
 == Artifacts
 ----
-include::02_artifacts.yml[]
+include::03_artifacts.yml[]
 ----
 
 == IPFS
 ----
-include::03_ipfs.yml[]
+include::04_ipfs.yml[]
 ----

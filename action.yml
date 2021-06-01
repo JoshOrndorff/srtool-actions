@@ -1,4 +1,4 @@
-name: "Build WASM Runtime"
+name: "Srtool"
 description: "Build WASM Runtime with SRTOOL"
 author: chevdor
 branding:
@@ -7,44 +7,63 @@ branding:
 
 inputs:
   chain:
-    description: "Name of the chain, ie. polkadot"
+    description: >
+      Name of the chain, ie. polkadot
     required: true
+
   package:
-    description: "Runtime package to build, ie. polkadot-runtime. If not provided, it will be set to <chain>-runtime"
+    description: >
+      Runtime package to build, ie. polkadot-runtime.
+      If your runtime follows this pattern, you don't have and should not provide this input.
+
+      If not provided, it will be set to <chain>-runtime
     required: false
 
   image:
-    description: "You can use an alternate image, use with caution!"
+    description: >
+      You can use an alternate image, use with caution!
     required: true
     default: "chevdor/srtool"
+
   tag:
-    description: "Tag of the srtool image to use. Omit to use the latest (recommended)"
+    description: >
+      Tag of the srtool image to use. Omit to use the latest (recommended)
     required: false
+
   workdir:
-    description: "Path of the project, this is where your main Cargo.toml is located. This is relative to $GITHUB_WORKSPACE."
+    description: >
+      Path of the project, this is where your main Cargo.toml is located. This is relative to $GITHUB_WORKSPACE.
+
     required: true
+
   runtime_dir:
-    description: "Location of the runtime in your repo. The default is 'runtime/<chain_name>'"
+    description: >
+      Location of the runtime in your repo. The default is 'runtime/<chain_name>'
     required: false
+    
 outputs:
-  # runtime:
-  #   description: "The generated Runtime"
-  #   value: "the runtime"
   proposal_hash:
-    description: "The proposal hash as it will show on-chain"
+    description: The proposal hash as it will show on-chain
     value: ${{ steps.build.outputs.proposal_hash }}
+
   json:
-    description: The json output of srtool
+    description: >
+      The full json output of srtool. If you need more information than this action provides by default,
+      you can use this json output and extract soem content using 'jq'.
     value: ${{ steps.build.outputs.build }}
+
   version:
     description: The version of srtool
     value: ${{ steps.build.outputs.version }}
+
   info:
     description: Some information from srtool about the current project
     value: ${{ steps.build.outputs.info }}
+
   ipfs_hash:
     description: ipfs hash
     value: ${{ steps.build.outputs.ipfs_hash }}
+
   wasm_path:
     description: Path of the produced runtime
     value: ${{ steps.build.outputs.wasm_path }}
@@ -56,7 +75,6 @@ runs:
       name: Install setup
       shell: bash
       run: |
-        # sudo apt update -y
         sudo apt install -y coreutils tree jq
 
     - id: check_latest_srtool
@@ -71,6 +89,7 @@ runs:
       shell: bash
       run: |
         echo ::group::Environment setup
+
         SRTOOL_TAG=${{ inputs.tag || env.SRTOOL_LATEST }}
         echo "SRTOOL_TAG=$SRTOOL_TAG" >> $GITHUB_ENV
         echo "SRTOOL_IMAGE=${{ inputs.image }}:$SRTOOL_TAG" >> $GITHUB_ENV
@@ -91,39 +110,45 @@ runs:
       shell: bash
       run: |
         echo ::group::Environment check
+
         echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
         echo ::info::env image: ${{ env.SRTOOL_IMAGE }}
         echo ::info::env chain: ${{ inputs.chain }}
         echo ::info::env package: ${{ env.PACKAGE }}
         echo ::info::env workdir: ${{ env.WORKDIR }}
         echo ::info::env runtime_dir: ${{ env.RUNTIME_DIR }}
+
         echo ::endgroup
 
-    # We pull first as it potentially generated lots of logs. Doing it here first, we can group thos logs
-    # and keep the logs of other steps cleaner.
+
     - id: pulling_srtool
       name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
       shell: bash
       run: |
         echo ::group::Pulling the srtool docker image: ${{ env.SRTOOL_IMAGE }}
+
         docker pull ${{ env.SRTOOL_IMAGE }}
+
         echo ::endgroup
 
     - id: version
       shell: bash
       run: |
         echo ::group::Srtool version
+
         echo ::debug::version workdir: ${{ env.WORKDIR }}
         echo ::debug::version
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
         JSON=`$CMD`
         echo ::set-output name=version::$JSON
+
         echo ::endgroup
 
     - id: info
       shell: bash
       run: |
         echo ::group::srtool info
+
         cd ${{ env.WORKDIR }}
         echo ::debug::info
         echo ::debug::info::git `ls -ald ${{ env.WORKDIR }}/.git`
@@ -131,6 +156,7 @@ runs:
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
         JSON=`$CMD`
         echo ::set-output name=info::$JSON
+
         echo ::endgroup
 
     - id: build
@@ -138,6 +164,7 @@ runs:
       shell: bash
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
+
         cd ${{ env.WORKDIR }}
         echo ::debug::build::workdir ${{ env.WORKDIR }}
         echo ::debug::build::chain ${{ inputs.chain }}
@@ -157,3 +184,5 @@ runs:
           PROP=`echo $JSON | jq -r .prop`
           echo ::set-output name=proposal_hash::$PROP
         }
+
+        echo ::endgroup
