@@ -17,17 +17,14 @@ inputs:
   workdir:
     description: "Path of the project, this is where your main Cargo.toml is located"
     required: true
-    default: "${{ github.workspace }}"
   chain:
     description: "Name of the chain, ie. polkadot"
     required: true
   package:
     description: "Runtime package to build, ie. polkadot-runtime"
-    default: "runtime-${{ inputs.chain }}"
     required: true
   build_dir:
     description: "Location of the runtime in your repo"
-    default: "runtime/${{ inputs.chain }}"
     required: true
 outputs:
   # runtime:
