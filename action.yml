@@ -52,6 +52,13 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - id: instal_utils
+      name: Install setup
+      shell: bash
+      run: |
+        # sudo apt update -y
+        sudo apt install -y coreutils tree jq
+
     - id: check_latest_srtool
       name: Check the version of the latest srtool
       shell: bash
@@ -74,7 +81,7 @@ runs:
         echo "RUNTIME_DIR=$RUNTIME_DIR" >> $GITHUB_ENV
 
         PACKAGE=${{ inputs.package }}
-        PACKAGE=${PACKAGE:-${{ inputs.chain }}'-runtime' }
+        PACKAGE=${PACKAGE:-${{ inputs.chain }}'-runtime'}
         echo "PACKAGE=$PACKAGE" >> $GITHUB_ENV
 
         echo ::endgroup
