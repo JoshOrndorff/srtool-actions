@@ -40,7 +40,7 @@ inputs:
     description: >
       Location of the runtime in your repo. The default is 'runtime/<chain_name>'
     required: false
-    
+
 outputs:
   proposal_hash:
     description: The proposal hash as it will show on-chain
@@ -111,15 +111,14 @@ runs:
       run: |
         echo ::group::Environment check
 
-        echo ::info::env SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
-        echo ::info::env image: ${{ env.SRTOOL_IMAGE }}
-        echo ::info::env chain: ${{ inputs.chain }}
-        echo ::info::env package: ${{ env.PACKAGE }}
-        echo ::info::env workdir: ${{ env.WORKDIR }}
-        echo ::info::env runtime_dir: ${{ env.RUNTIME_DIR }}
+        echo - SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
+        echo - image: ${{ env.SRTOOL_IMAGE }}
+        echo - chain: ${{ inputs.chain }}
+        echo - package: ${{ env.PACKAGE }}
+        echo - workdir: ${{ env.WORKDIR }}
+        echo - runtime_dir: ${{ env.RUNTIME_DIR }}
 
         echo ::endgroup
-
 
     - id: pulling_srtool
       name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
@@ -140,6 +139,7 @@ runs:
         echo ::debug::version
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/version -cM"
         JSON=`$CMD`
+        echo $JSON | jq
         echo ::set-output name=version::$JSON
 
         echo ::endgroup
@@ -155,6 +155,8 @@ runs:
         echo ::debug::info::cargo `ls -al ${{ env.WORKDIR }}/Cargo.toml`
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} /srtool/info -cM"
         JSON=`$CMD`
+        echo $JSON | jq
+
         echo ::set-output name=info::$JSON
 
         echo ::endgroup
@@ -177,10 +179,11 @@ runs:
         stdbuf -oL $CMD | {
           while IFS= read -r line
           do
-            echo ::debug::srtool $line
+            echo ▷ $line
             JSON="$line"
           done
           echo ::set-output name=json::$JSON
+          echo $JSON | jq
           PROP=`echo $JSON | jq -r .prop`
           echo ::set-output name=proposal_hash::$PROP
         }
