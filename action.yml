@@ -130,7 +130,7 @@ runs:
         echo ::group::Srtool version
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} version -cM"
         JSON=`$CMD`
-        echo $JSON | jq
+        echo '$JSON' | jq
         echo ::set-output name=version::$JSON
         echo ::endgroup
 
@@ -140,7 +140,7 @@ runs:
         echo ::group::srtool info
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} info -cM"
         JSON=`$CMD`
-        echo $JSON | jq
+        echo '$JSON' | jq
         echo ::set-output name=info::$JSON
         echo ::endgroup
 
@@ -160,15 +160,15 @@ runs:
             JSON="$line"
           done
           echo ::set-output name=json::$JSON
-          echo $JSON | jq
-          
-          PROP=`echo $JSON | jq -r .prop`
+          echo '$JSON' | jq
+
+          PROP=`echo '$JSON' | jq -r .prop`
           echo ::set-output name=proposal_hash::$PROP
 
-          WASM=`echo $JSON | jq -r .wasm`
+          WASM=`echo '$JSON' | jq -r .wasm`
           echo ::set-output name=wasm::$WASM
 
-          IPFS=`echo $JSON | jq -r .ipfs`
+          IPFS=`echo '$JSON' | jq -r .ipfs`
           echo ::set-output name=ipfs::$IPFS
 
         }
