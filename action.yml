@@ -131,7 +131,7 @@ runs:
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} version -cM"
         JSON=`$CMD`
         echo $JSON | jq
-        echo ::set-output name=version::$JSON
+        echo "::set-output name=version::$JSON"
         echo ::endgroup
 
     - id: info
@@ -141,7 +141,7 @@ runs:
         CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} info -cM"
         JSON=`$CMD`
         echo $JSON | jq
-        echo ::set-output name=info::$JSON
+        echo "::set-output name=info::$JSON"
         echo ::endgroup
 
     - id: build
